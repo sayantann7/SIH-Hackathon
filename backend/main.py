@@ -122,6 +122,11 @@ def api_schedule(params: Dict[Any, Any] = None):
     min_branded_run = int(overrides.get("min_branded_run", 0))
     run_min_fitness_score = float(overrides.get("run_min_fitness_score", 0.0))
     min_clean_due = int(overrides.get("min_clean_due", 0))
+    cleaning_due_threshold = int(overrides.get("cleaning_due_threshold", 7))
+    # objective weights (configurable)
+    risk_w = float(overrides.get("risk_w", 50.0))
+    mileage_w = float(overrides.get("mileage_w", 1.0))
+    branding_w = float(overrides.get("branding_w", 20.0))
 
     # Prefer train IDs from trains.csv if available; otherwise from fitness keys
     if "train_id" in trains_df.columns:
@@ -147,7 +152,14 @@ def api_schedule(params: Dict[Any, Any] = None):
 
     # optionally compute sets used by constraints
     branded_trains = [t for t in train_ids if safe_float(branding.get(t, {}).get("priority", 0.0), 0.0) > 0]
-    needs_cleaning = {t: (0 if cleaning.get(t) else 1) or (1 if int(safe_float(cleaning.get(t, {}).get("due", 0), 0)) == 1 else 0) for t in train_ids}
+    # cleaning due: based on last_cleaned_days if present; missing record => due
+    needs_cleaning = {}
+    for t in train_ids:
+        if not cleaning.get(t):
+            needs_cleaning[t] = 1
+        else:
+            days = safe_float(cleaning.get(t, {}).get("last_cleaned_days", None), None)
+            needs_cleaning[t] = 1 if (days is None or days >= cleaning_due_threshold) else 0
    
     # each train must be exactly one state
     for t in train_ids:
@@ -194,11 +206,6 @@ def api_schedule(params: Dict[Any, Any] = None):
     # risk proxy: lower fitness score increases risk
     risk_score = {t: 1 - safe_float(fitness.get(t, {}).get("score", 1.0), 1.0) for t in train_ids}
 
-    # objective: weighted sum: risk + mileage deviation - branding bonus
-    risk_w = 50.0
-    mileage_w = 1.0
-    branding_w = 20.0
-
     model += (
         risk_w * pulp.lpSum([risk_score[t] * x[t]["run"] for t in train_ids])
         + mileage_w * pulp.lpSum([dev[t] for t in train_ids])
@@ -222,6 +229,7 @@ def api_schedule(params: Dict[Any, Any] = None):
 
     # build result
     result = []
+    conflicts = []
     for t in train_ids:
         assigned = None
         for s in states:
@@ -230,25 +238,42 @@ def api_schedule(params: Dict[Any, Any] = None):
                 assigned = s
                 break
         explanation = []
+        blocking_reasons = []
         if fitness.get(t, {}).get("valid", 1) == 0:
             explanation.append("fitness expired")
+            blocking_reasons.append("fitness expired")
         if jobcard.get(t, {}).get("open", 0) == 1:
             explanation.append("open job card")
+            blocking_reasons.append("open job card")
         if safe_float(fitness.get(t, {}).get("score", 1.0), 1.0) < run_min_fitness_score:
             explanation.append(f"fitness below run threshold {run_min_fitness_score}")
+            blocking_reasons.append("fitness below threshold")
         if needs_cleaning.get(t, 0) and assigned == "cleaning":
             explanation.append("cleaning due")
         if t == fail_train and assigned != "run":
             explanation.append("simulated failure")
+            blocking_reasons.append("simulated failure")
         if branding_score[t] > 0:
             explanation.append(f"branding priority:{branding_score[t]}")
-        # stabling site best-effort across likely column names
+        # stabling site best-effort across likely column names (include 'bay')
         stab = stabling.get(t, {})
         stabling_site = None
-        for key in ("site", "depot", "yard", "location", "stabling"):
+        for key in ("site", "depot", "yard", "location", "stabling", "bay"):
             if key in stab and stab.get(key) not in (None, ""):
                 stabling_site = stab.get(key)
                 break
+
+        # record conflicts if train is not assigned to run but had a blocking reason
+        if assigned != "run" and blocking_reasons:
+            conflicts.append({
+                "train_id": t,
+                "assigned": assigned,
+                "reasons": blocking_reasons
+            })
+
+        # per-train score components (for explainability/ranking)
+        run_cost_component = risk_w * risk_score[t] - branding_w * branding_score[t]
+        mileage_component = safe_float(pulp.value(dev[t]) if dev.get(t) is not None else 0.0, 0.0)
 
         result.append(
             {
@@ -262,11 +287,37 @@ def api_schedule(params: Dict[Any, Any] = None):
                 "branding_priority": safe_number(branding_score[t]),
                 "model": (trains_info.get(t, {}) or {}).get("model"),
                 "stabling_site": stabling_site,
-                "has_cleaning_record": bool(cleaning.get(t))
+                "has_cleaning_record": bool(cleaning.get(t)),
+                "cleaning_due": int(needs_cleaning.get(t, 0)),
+                "rank_score": safe_number(run_cost_component + mileage_w * mileage_component)
             }
         )
 
-    return JSONResponse({"schedule": result, "objective_status": pulp.LpStatus[model.status]})
+    # rank induction list (lower objective contribution is better); only for readability
+    ranked = sorted(result, key=lambda r: (r["rank_score"] if r["rank_score"] is not None else 0.0))
+
+    return JSONResponse({
+        "schedule": result,
+        "ranked": ranked,
+        "conflicts": conflicts,
+        "objective_status": pulp.LpStatus[model.status],
+        "parameters": {
+            "cleaning_capacity": cleaning_capacity,
+            "cleaning_due_threshold": cleaning_due_threshold,
+            "min_clean_due": min_clean_due,
+            "min_run": min_run,
+            "max_run": max_run,
+            "maintenance_capacity": maintenance_capacity,
+            "min_standby": min_standby,
+            "max_standby": max_standby,
+            "min_branded_run": min_branded_run,
+            "run_min_fitness_score": run_min_fitness_score,
+            "risk_w": risk_w,
+            "mileage_w": mileage_w,
+            "branding_w": branding_w,
+            "fail_train": fail_train
+        }
+    })
 
 if __name__ == '__main__':
     import uvicorn

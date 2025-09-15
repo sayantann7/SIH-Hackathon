@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>KMRL Scheduler MVP</title>
+  <style>
+    body{font-family:Inter,Arial,Helvetica,sans-serif;padding:20px;background:#f7f9fc}
+    table{border-collapse:collapse;width:100%;margin-top:10px}
+    th,td{padding:8px;border:1px solid #ddd;text-align:left}
+    .run{background:#e6ffed} .maintenance{background:#ffe6e6} .standby{background:#fff6e6} .cleaning{background:#e6f0ff}
+    .controls{margin-bottom:10px}
+  </style>
+</head>
+<body>
+  <h1>KMRL Scheduler - MVP</h1>
+  <div class="controls">
+    <label>Cleaning capacity: <input id="cleanCap" type="number" value="3" min="0" max="10"/></label>
+    <label style="margin-left:10px">Simulate failure: <input id="failTrain" placeholder="e.g. T5" /></label>
+    <button id="runBtn">Run Scheduler</button>
+    <button id="refreshBtn">Refresh Data</button>
+  </div>
+  <div id="status">Loading data...</div>
+  <div id="schedule"></div>
+
+<script>
+async function fetchData(){
+  const r = await fetch('/api/data');
+  return await r.json();
+}
+function renderData(data){
+  const trains = data['trains.csv'] || [];
+  let html = '<h3>Trains</h3><table><tr><th>Train</th><th>Model</th></tr>';
+  trains.forEach(t=> html += `<tr><td>${t.train_id}</td><td>${t.model}</td></tr>`);
+  html += '</table>';
+  document.getElementById('status').innerHTML = html;
+}
+
+async function runScheduler(){
+  const cleanCap = parseInt(document.getElementById('cleanCap').value)||3;
+  const failTrain = document.getElementById('failTrain').value || null;
+  document.getElementById('schedule').innerHTML = '<p>Running optimizer...</p>';
+  const r = await fetch('/api/schedule', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cleaning_capacity: cleanCap, fail_train: failTrain})});
+  const res = await r.json();
+  renderSchedule(res.schedule || res.schedule);
+}
+
+function renderSchedule(schedule){
+  const rules = `
+  <div style="margin:10px 0;padding:10px;background:#fff;border:1px solid #ddd;border-radius:6px">
+    <strong>Optimization rules:</strong>
+    <ul>
+      <li>Each train is assigned exactly one state: <em>run</em>, <em>standby</em>, <em>maintenance</em>, or <em>cleaning</em>.</li>
+      <li>Fitness invalid (expired) => cannot run. A minimum fitness score can be enforced to run.</li>
+      <li>Open job card => train must be in maintenance.</li>
+      <li>Cleaning capacity: total trains in cleaning ≤ selected capacity; a minimum number of due-cleaning trains can be enforced.</li>
+      <li>Global service levels: min/max running trains, min/max standby pool, maintenance capacity.</li>
+      <li>Branding: reward running branded trains; can enforce minimum branded trains running.</li>
+      <li>Objective: minimize risk when running (1 − fitness score) + mileage imbalance − branding bonus.</li>
+      <li>Simulation: a specified failed train is forced not to run.</li>
+    </ul>
+  </div>`;
+
+  let html = '<h3>Schedule</h3>' + rules + '<table><tr>'+
+    '<th>Train</th><th>Assigned</th><th>Mileage</th><th>Fitness</th><th>Fitness Valid</th><th>Jobcard Open</th><th>Branding Priority</th><th>Model</th><th>Cleaning Record</th><th>Reasoning</th></tr>';
+  schedule.forEach(s=>{
+    html += `<tr class="${s.assigned}">`+
+      `<td>${s.train_id ?? ''}</td>`+
+      `<td>${s.assigned ?? ''}</td>`+
+      `<td>${s.mileage_km ?? ''}</td>`+
+      `<td>${s.fitness_score ?? ''}</td>`+
+      `<td>${s.fitness_valid ? 'yes' : 'no'}</td>`+
+      `<td>${s.jobcard_open ? 'yes' : 'no'}</td>`+
+      `<td>${s.branding_priority ?? ''}</td>`+
+      `<td>${s.model ?? ''}</td>`+
+      `<td>${s.has_cleaning_record ? 'yes' : 'no'}</td>`+
+      `<td>${(s.explanation||[]).join(', ')}</td>`+
+    `</tr>`;
+  });
+  html += '</table>';
+  document.getElementById('schedule').innerHTML = html;
+}
+
+document.getElementById('runBtn').addEventListener('click', runScheduler);
+document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+  const data = await fetchData();
+  renderData(data);
+});
+
+// initial load
+fetchData().then(renderData);
+</script>
+</body>
+</html>

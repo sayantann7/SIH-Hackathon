@@ -2,92 +2,744 @@
 <html>
 <head>
   <meta charset='utf-8'>
-  <title>KMRL Scheduler MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KMRL Scheduler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body{font-family:Inter,Arial,Helvetica,sans-serif;padding:20px;background:#f7f9fc}
-    table{border-collapse:collapse;width:100%;margin-top:10px}
-    th,td{padding:8px;border:1px solid #ddd;text-align:left}
-    .run{background:#e6ffed} .maintenance{background:#ffe6e6} .standby{background:#fff6e6} .cleaning{background:#e6f0ff}
-    .controls{margin-bottom:10px}
+    :root{
+      --bg:#f7f9fc;--panel:#ffffff;--muted:#6b7280;--text:#0f172a;--primary:#2563eb;--primary-600:#1d4ed8;--ring:#dbeafe;--border:#e5e7eb;--success:#10b981;--warning:#f59e0b;--danger:#ef4444
+    }
+    *{box-sizing:border-box}
+    body{font-family:"Plus Jakarta Sans",Inter,Arial,Helvetica,sans-serif;margin:0;background:var(--bg);color:var(--text);
+      background-image:url('/static/assets/rail.png'), url('/static/assets/rail.png');
+      background-repeat:repeat-y, repeat-y;
+      background-position:left top, right top;
+      background-size:max(160px, calc((100vw - 1100px)/2)) auto, max(160px, calc((100vw - 1100px)/2)) auto}
+  .container{max-width:1100px;margin:0 auto;padding:24px;transition:opacity .25s ease, filter .25s ease}
+    header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 20px}
+    .title{font-weight:700;font-size:22px;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
+    .logo{height:28px;width:auto;display:inline-block}
+    .subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+    .header-right{display:flex;gap:8px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
+    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-size:12px;color:var(--muted)}
+    input{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit;min-width:160px;background:#fff}
+    input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--ring)}
+    .btn{appearance:none;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+    .btn.secondary{background:#fff;color:var(--primary)}
+    .btn:active{transform:translateY(1px)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .tabs{display:flex;gap:6px;margin-top:14px}
+    .tab{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-weight:600}
+    .tab.active{border-color:var(--primary);color:var(--primary);background:var(--ring)}
+    .section{margin-top:14px}
+    .hint{font-size:12px;color:var(--muted)}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid var(--border)}
+    .b-run{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+    .b-standby{background:#fffbeb;color:#92400e;border-color:#fde68a}
+    .b-maintenance{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+    .b-cleaning{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}
+    table{border-collapse:separate;border-spacing:0;width:100%}
+    thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);text-align:left;font-size:12px;color:var(--muted);padding:10px}
+    tbody td{padding:10px;border-bottom:1px solid var(--border);font-size:14px}
+    tbody tr:hover{background:#fafafa}
+    .table-wrap{overflow:auto;max-height:60vh;border:1px solid var(--border);border-radius:12px;background:#fff}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .help{margin-top:8px;color:var(--muted);font-size:13px}
+    .rules{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0}
+    .rules ul{margin:6px 0 0 18px}
+    .status{margin-top:10px;font-size:14px;color:var(--muted)}
+    .row{display:flex;gap:14px;flex-wrap:wrap}
+    /* vertical filters layout */
+    .filters-vertical{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+    .filters-vertical .field{display:flex;flex-direction:row;align-items:center;gap:8px;margin:0}
+    .filters-vertical .field:last-child{margin-top:4px}
+    /* toasts */
+  .toast-wrap{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:10px;z-index:9999;transition:filter .25s ease}
+    .toast{display:flex;align-items:center;gap:10px;color:var(--text);padding:12px 14px;border-radius:12px;
+      background:#ffffff;
+      border:1px solid var(--border);
+      box-shadow:0 10px 20px rgba(2,6,23,.08);
+      font-size:13px;letter-spacing:.2px;opacity:0;transform:translateY(8px);
+      transition:opacity .18s ease, transform .18s ease}
+    .toast .dot{width:8px;height:8px;border-radius:999px;background:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+
+    /* Loading overlay */
+  body.loading{overflow:hidden; background-image:none}
+  /* Fade site content slightly while loader shows */
+  body.loading .container{filter:blur(2px)}
+  body.loading .toast-wrap{filter:blur(1px)}
+  /* Transparent, non-blocking overlay over content */
+  #loadingOverlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:transparent;font-family:inherit;pointer-events:none}
+    #loadingOverlay.hidden{animation:fadeOut .6s ease forwards;pointer-events:none}
+  /* Train size slightly increased (not huge) */
+  #loadingOverlay img.train{position:absolute;left:-60%;height:min(120vh,600px);width:auto;object-fit:contain;animation:trainRush 2.2s cubic-bezier(.8,.02,.2,.99) .25s forwards;filter:drop-shadow(0 12px 18px rgba(0,0,0,.5));will-change:transform;z-index:2}
+  /* Rail wrappers slide in from off-screen; inner rails scroll after entering */
+  #loadingOverlay .rail-wrap{position:absolute;top:0;bottom:0;width:max(160px, calc((100vw - 1100px)/2));overflow:hidden;pointer-events:none;z-index:1;will-change:transform}
+  #loadingOverlay .rail-wrap.left{left:0;transform:translateY(100%);animation:railEnterUp 1.2s ease-out .1s forwards}
+  #loadingOverlay .rail-wrap.right{right:0;transform:translateY(-100%);animation:railEnterDown 1.2s ease-out .1s forwards}
+  #loadingOverlay .rail{position:absolute;inset:0;background:url('/static/assets/rail.png') left top/100% auto repeat-y;opacity:.6;filter:drop-shadow(0 4px 14px rgba(0,0,0,.25));will-change:background-position}
+  #loadingOverlay .rail-wrap.left .rail{background-position:left top;animation:railScrollLeft 6s linear 1.2s infinite}
+  #loadingOverlay .rail-wrap.right .rail{background-position:right top;animation:railScrollRight 6s linear 1.2s infinite}
+  #loadingOverlay .progressWrap{position:absolute;bottom:9%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;letter-spacing:.5px;color:#0f172a;font-weight:600;text-transform:uppercase;mix-blend-mode:plus-lighter}
+    #loadingOverlay .bar{width:220px;height:5px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden;position:relative}
+    #loadingOverlay .bar span{position:absolute;inset:0;background:linear-gradient(90deg,#3b82f6,#60a5fa,#3b82f6);background-size:220% 100%;animation:barFlow 2s linear infinite}
+    @keyframes trainRush{0%{transform:translateX(0) scale(.9) skewX(-8deg)}40%{transform:translateX(55vw) scale(1) skewX(-3deg)}65%{transform:translateX(105vw) scale(1.05) skewX(6deg)}100%{transform:translateX(140vw) scale(1.1) skewX(10deg);opacity:0}}
+  @keyframes railEnterUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes railEnterDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+  @keyframes railScrollLeft{0%{background-position:left 0}100%{background-position:left 1800px}}
+  @keyframes railScrollRight{0%{background-position:right 0}100%{background-position:right 1800px}}
+    @keyframes barFlow{0%{background-position:0 0}100%{background-position:200% 0}}
+    @keyframes fadeOut{to{opacity:0;visibility:hidden}}
   </style>
 </head>
-<body>
-  <h1>KMRL Scheduler - MVP</h1>
-  <div class="controls">
-    <label>Cleaning capacity: <input id="cleanCap" type="number" value="3" min="0" max="10"/></label>
-    <label style="margin-left:10px">Simulate failure: <input id="failTrain" placeholder="e.g. T5" /></label>
-    <button id="runBtn">Run Scheduler</button>
-    <button id="refreshBtn">Refresh Data</button>
+<body class="loading">
+  <div id="loadingOverlay">
+    <div class="rail-wrap left"><div class="rail"></div></div>
+    <div class="rail-wrap right"><div class="rail"></div></div>
+    <img src="/static/assets/train.png" alt="Loading train" class="train"/>
+    <div class="progressWrap">
+      <div>Preparing schedule engine…</div>
+      <div class="bar"><span></span></div>
+    </div>
   </div>
-  <div id="status">Loading data...</div>
-  <div id="schedule"></div>
+  <div class="container">
+    <header>
+      <div>
+        <div class="title"><img class="logo" style="width: 50px; height: 50px;" src="/static/assets/logo.png" alt="KMRL"/> Kochi Metro Rail Ltd Scheduler</div>
+        <div class="subtitle">Plan daily rolling stock with constraints and simulations</div>
+      </div>
+      <div class="header-right">
+        <button id="refreshBtn" class="btn secondary">Refresh data</button>
+        <button id="runBtn" class="btn">Run scheduler</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="controls">
+        <div class="field">
+          <label for="cleanCap">Cleaning capacity</label>
+          <input id="cleanCap" type="number" value="3" min="0" max="50" />
+        </div>
+        <div class="field">
+          <label for="failTrain">Simulate failure (train id)</label>
+          <input id="failTrain" placeholder="e.g. T5" />
+        </div>
+        <div class="field">
+          <label for="presetBar">Presets</label>
+          <div class="row" id="presetBar" style="gap:6px">
+            <button class="btn secondary" id="presetDefault">Default</button>
+            <button class="btn secondary" id="presetBrand">Branding push</button>
+            <button class="btn secondary" id="presetClean">Cleaning push</button>
+            <button class="btn secondary" id="presetRisk">Risk averse</button>
+            <button class="btn secondary" id="presetMileage">Balance mileage</button>
+          </div>
+        </div>
+        <button class="btn secondary" id="toggleAdvanced">Advanced</button>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="hint">Use Data/Schedule tabs below to inspect outputs.</div>
+        </div>
+      </div>
+      <div id="advancedPanel" class="card" style="display:none;margin-top:10px">
+        <div class="row">
+          <div class="field">
+            <label for="cleanThresh">Cleaning due threshold (days)</label>
+            <input id="cleanThresh" type="number" value="7" min="0" max="60" />
+          </div>
+          <div class="field">
+            <label for="minCleanDue">Min due-to-clean today</label>
+            <input id="minCleanDue" type="number" value="0" min="0" max="50" />
+          </div>
+          <div class="field">
+            <label for="riskW">Risk weight</label>
+            <input id="riskW" type="number" value="50" step="1" />
+          </div>
+          <div class="field">
+            <label for="mileageW">Mileage weight</label>
+            <input id="mileageW" type="number" value="1" step="0.1" />
+          </div>
+          <div class="field">
+            <label for="brandingW">Branding weight</label>
+            <input id="brandingW" type="number" value="20" step="1" />
+          </div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="data">Data</button>
+        <button class="tab" data-tab="schedule">Schedule</button>
+        <button class="tab" data-tab="ranked">Ranked</button>
+        <button class="tab" data-tab="conflicts">Conflicts</button>
+        <button class="tab" data-tab="whatif">What-if</button>
+      </div>
+    </div>
+
+    <div class="section" id="section-whatif" style="display:none">
+      <div class="row">
+        <div class="card" style="flex:1;min-width:260px">
+          <div style="font-weight:700;margin-bottom:8px">Baseline</div>
+          <div class="controls">
+            <div class="field">
+              <label for="baselineClean">Cleaning capacity</label>
+              <input id="baselineClean" type="number" value="3" min="0" max="50" />
+            </div>
+            <div class="field">
+              <label for="baselineFail">Simulate failure</label>
+              <input id="baselineFail" placeholder="e.g. T5" />
+            </div>
+          </div>
+        </div>
+        <div class="card" style="flex:1;min-width:260px">
+          <div style="font-weight:700;margin-bottom:8px">Scenario</div>
+  <div class="controls">
+            <div class="field">
+              <label for="scenarioClean">Cleaning capacity</label>
+              <input id="scenarioClean" type="number" value="4" min="0" max="50" />
+            </div>
+            <div class="field">
+              <label for="scenarioFail">Simulate failure</label>
+              <input id="scenarioFail" placeholder="e.g. T10" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="whatIfRunBtn" class="btn">Run comparison</button>
+        <div id="whatIfStatus" class="status"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="card" style="flex:1;min-width:260px">
+          <div style="font-weight:700;margin-bottom:8px">Baseline summary</div>
+          <div id="baselineSummary" class="hint">—</div>
+        </div>
+        <div class="card" style="flex:1;min-width:260px">
+          <div style="font-weight:700;margin-bottom:8px">Scenario summary</div>
+          <div id="scenarioSummary" class="hint">—</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div style="font-weight:700;margin-bottom:6px">Changed assignments</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Train</th>
+                <th>Baseline</th>
+                <th>Scenario</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="whatIfDiffTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-data">
+      <div class="row">
+        <div class="card" style="flex:1;min-width:280px">
+          <div style="font-weight:700;margin-bottom:8px">Trains</div>
+          <div id="dataSummary" class="hint">Loading data...</div>
+          <div class="table-wrap" style="margin-top:10px">
+            <table>
+              <thead><tr><th>Train</th><th>Model</th><th>Capacity</th></tr></thead>
+              <tbody id="trainsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-schedule" style="display:none">
+      <div class="rules">
+        <strong>Optimization rules</strong>
+        <ul>
+          <li>Each train is assigned exactly one: <em>run</em>, <em>standby</em>, <em>maintenance</em>, or <em>cleaning</em>.</li>
+          <li>Fitness invalid or below threshold cannot run; open jobcard forces maintenance.</li>
+          <li>Cleaning capacity respected; can require minimum due-cleaning trains.</li>
+          <li>Global levels: min/max run, standby, and maintenance capacity constraints.</li>
+          <li>Branding rewarded in objective; can enforce minimum branded run.</li>
+        </ul>
+      </div>
+      <div class="row" style="margin:8px 0;align-items:center">
+        <div id="stateChips" class="row" style="gap:6px">
+          <button class="btn secondary" data-state="all">All</button>
+          <button class="btn secondary" data-state="run">Run</button>
+          <button class="btn secondary" data-state="standby">Standby</button>
+          <button class="btn secondary" data-state="maintenance">Maintenance</button>
+          <button class="btn secondary" data-state="cleaning">Cleaning</button>
+        </div>
+        <div class="field">
+          <label for="searchTrain">Search train</label>
+          <input id="searchTrain" placeholder="e.g. T12" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Train</th>
+              <th>Assigned</th>
+              <th>Mileage</th>
+              <th>Fitness</th>
+              <th>Valid</th>
+              <th>Jobcard</th>
+              <th>Branding</th>
+              <th>Model</th>
+              <th>Cleaning rec</th>
+              <th>Reasoning</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleTable"></tbody>
+        </table>
+      </div>
+      <div id="scheduleStatus" class="status"></div>
+    </div>
+
+    <div class="section" id="section-ranked" style="display:none">
+      <div class="row" style="align-items:center">
+        <div class="hint">Ordered by optimizer rank score (lower is better)</div>
+        <button id="rankedExportBtn" class="btn secondary">Export CSV</button>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Train</th>
+              <th>Assigned</th>
+              <th>Rank score</th>
+              <th>Fitness</th>
+              <th>Branding</th>
+              <th>Mileage</th>
+              <th>Cleaning due</th>
+            </tr>
+          </thead>
+          <tbody id="rankedTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section" id="section-conflicts" style="display:none">
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">Filters</div>
+        <div class="filters-vertical">
+          <div class="field"><input id="fFitness" type="checkbox" checked /><label for="fFitness">Fitness</label></div>
+          <div class="field"><input id="fJobcard" type="checkbox" checked /><label for="fJobcard">Jobcard</label></div>
+          <div class="field"><input id="fCleaning" type="checkbox" checked /><label for="fCleaning">Cleaning threshold</label></div>
+          <div class="field"><div class="hint" id="conflictCount">—</div></div>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Train</th>
+              <th>Assigned</th>
+              <th>Reasons</th>
+            </tr>
+          </thead>
+          <tbody id="conflictsTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 <script>
-async function fetchData(){
-  const r = await fetch('/api/data');
-  return await r.json();
+// simple toast system
+const toastHost = document.createElement('div');
+toastHost.className = 'toast-wrap';
+document.body.appendChild(toastHost);
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span class="dot"></span><span>${msg}</span>`;
+  toastHost.appendChild(t);
+  requestAnimationFrame(()=>{ t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+  setTimeout(()=>{ t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 1800);
+  setTimeout(()=>{ t.remove(); }, 2100);
 }
+const els = {
+  tabs: Array.from(document.querySelectorAll('.tab')),
+  sectionData: document.getElementById('section-data'),
+  sectionSchedule: document.getElementById('section-schedule'),
+  sectionWhatIf: document.getElementById('section-whatif'),
+  sectionRanked: document.getElementById('section-ranked'),
+  sectionConflicts: document.getElementById('section-conflicts'),
+  dataSummary: document.getElementById('dataSummary'),
+  trainsTable: document.getElementById('trainsTable'),
+  scheduleTable: document.getElementById('scheduleTable'),
+  scheduleStatus: document.getElementById('scheduleStatus'),
+  runBtn: document.getElementById('runBtn'),
+  refreshBtn: document.getElementById('refreshBtn'),
+  cleanCap: document.getElementById('cleanCap'),
+  failTrain: document.getElementById('failTrain'),
+  minCleanDue: document.getElementById('minCleanDue'),
+  toggleAdvanced: document.getElementById('toggleAdvanced'),
+  advancedPanel: document.getElementById('advancedPanel'),
+  cleanThresh: document.getElementById('cleanThresh'),
+  riskW: document.getElementById('riskW'),
+  mileageW: document.getElementById('mileageW'),
+  brandingW: document.getElementById('brandingW'),
+  rankedTable: document.getElementById('rankedTable'),
+  rankedExportBtn: document.getElementById('rankedExportBtn'),
+  conflictsTable: document.getElementById('conflictsTable'),
+  conflictCount: document.getElementById('conflictCount'),
+  filterFitness: document.getElementById('fFitness'),
+  filterJobcard: document.getElementById('fJobcard'),
+  filterCleaning: document.getElementById('fCleaning'),
+  searchTrain: document.getElementById('searchTrain')
+};
+
+let cachedData = null;
+
+function setActiveTab(name){
+  els.tabs.forEach(t=>{
+    const active = t.dataset.tab === name;
+    t.classList.toggle('active', active);
+  });
+  els.sectionData.style.display = name === 'data' ? '' : 'none';
+  els.sectionSchedule.style.display = name === 'schedule' ? '' : 'none';
+  els.sectionWhatIf.style.display = name === 'whatif' ? '' : 'none';
+  els.sectionRanked.style.display = name === 'ranked' ? '' : 'none';
+  els.sectionConflicts.style.display = name === 'conflicts' ? '' : 'none';
+}
+
+els.tabs.forEach(t=> t.addEventListener('click', ()=> setActiveTab(t.dataset.tab)));
+
+async function fetchData(){
+  els.dataSummary.textContent = 'Loading data...';
+  try{
+  const r = await fetch('/api/data');
+    if(!r.ok) throw new Error('Failed to fetch data');
+    const data = await r.json();
+    cachedData = data;
+    renderData(data);
+  }catch(err){
+    els.dataSummary.textContent = 'Error loading data';
+  }
+}
+
 function renderData(data){
   const trains = data['trains.csv'] || [];
-  let html = '<h3>Trains</h3><table><tr><th>Train</th><th>Model</th></tr>';
-  trains.forEach(t=> html += `<tr><td>${t.train_id}</td><td>${t.model}</td></tr>`);
-  html += '</table>';
-  document.getElementById('status').innerHTML = html;
+  els.dataSummary.innerHTML = `${trains.length} trains loaded`;
+  els.trainsTable.innerHTML = trains.map(t=>`
+    <tr>
+      <td>${t.train_id ?? ''}</td>
+      <td>${t.model ?? ''}</td>
+      <td>${t.capacity ?? ''}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== Loading overlay handling =====
+const loadingOverlay = document.getElementById('loadingOverlay');
+if(loadingOverlay){
+  // Hide background rails and lock scroll while overlay plays
+  document.body.classList.add('loading');
+  const removeOverlay = ()=>{
+    if(!loadingOverlay.classList.contains('hidden')){
+      loadingOverlay.classList.add('hidden');
+      setTimeout(()=> loadingOverlay.remove(), 900);
+      document.body.classList.remove('loading');
+    }
+  };
+  // Primary removal after train animation
+  setTimeout(removeOverlay, 2500);
+  // Hard fallback in case animations lag
+  setTimeout(removeOverlay, 5000);
+  window.addEventListener('load', ()=> setTimeout(removeOverlay, 1200));
 }
 
 async function runScheduler(){
-  const cleanCap = parseInt(document.getElementById('cleanCap').value)||3;
-  const failTrain = document.getElementById('failTrain').value || null;
-  document.getElementById('schedule').innerHTML = '<p>Running optimizer...</p>';
-  const r = await fetch('/api/schedule', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cleaning_capacity: cleanCap, fail_train: failTrain})});
+  const cleanCap = Math.max(0, parseInt(els.cleanCap.value || '3', 10));
+  const failTrain = (els.failTrain.value || '').trim() || null;
+  const cleaning_due_threshold = Math.max(0, parseInt(els.cleanThresh.value || '7', 10));
+  const risk_w = parseFloat(els.riskW.value || '50');
+  const mileage_w = parseFloat(els.mileageW.value || '1');
+  const branding_w = parseFloat(els.brandingW.value || '20');
+  const min_clean_due = Math.max(0, parseInt(els.minCleanDue.value || '0', 10));
+  els.runBtn.disabled = true; els.refreshBtn.disabled = true;
+  els.scheduleStatus.textContent = 'Running optimizer...';
+  els.scheduleTable.innerHTML = '';
+  try{
+    const r = await fetch('/api/schedule', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cleaning_capacity: cleanCap, fail_train: failTrain, cleaning_due_threshold, risk_w, mileage_w, branding_w, min_clean_due})
+    });
+    if(!r.ok) throw new Error('Failed to run optimization');
   const res = await r.json();
-  renderSchedule(res.schedule || res.schedule);
+    renderSchedule(res.schedule || []);
+    lastRanked = res.ranked || [];
+    renderRanked(lastRanked);
+    renderConflicts(res.conflicts || []);
+    renderRanked(res.ranked || []);
+    window._lastConflicts = res.conflicts || [];
+    renderConflicts(window._lastConflicts);
+    els.scheduleStatus.textContent = `Solver status: ${res.objective_status || 'unknown'}`;
+    setActiveTab('schedule');
+  }catch(err){
+    els.scheduleStatus.textContent = 'Error running optimizer';
+  }finally{
+    els.runBtn.disabled = false; els.refreshBtn.disabled = false;
+  }
 }
+
+function stateBadge(assigned){
+  const map = {run:'b-run', standby:'b-standby', maintenance:'b-maintenance', cleaning:'b-cleaning'};
+  const cls = map[assigned] || 'pill';
+  return `<span class="badge ${cls}">${assigned || ''}</span>`;
+}
+
+function yesno(v){ return v ? 'Yes' : 'No'; }
 
 function renderSchedule(schedule){
-  const rules = `
-  <div style="margin:10px 0;padding:10px;background:#fff;border:1px solid #ddd;border-radius:6px">
-    <strong>Optimization rules:</strong>
-    <ul>
-      <li>Each train is assigned exactly one state: <em>run</em>, <em>standby</em>, <em>maintenance</em>, or <em>cleaning</em>.</li>
-      <li>Fitness invalid (expired) => cannot run. A minimum fitness score can be enforced to run.</li>
-      <li>Open job card => train must be in maintenance.</li>
-      <li>Cleaning capacity: total trains in cleaning ≤ selected capacity; a minimum number of due-cleaning trains can be enforced.</li>
-      <li>Global service levels: min/max running trains, min/max standby pool, maintenance capacity.</li>
-      <li>Branding: reward running branded trains; can enforce minimum branded trains running.</li>
-      <li>Objective: minimize risk when running (1 − fitness score) + mileage imbalance − branding bonus.</li>
-      <li>Simulation: a specified failed train is forced not to run.</li>
-    </ul>
-  </div>`;
-
-  let html = '<h3>Schedule</h3>' + rules + '<table><tr>'+
-    '<th>Train</th><th>Assigned</th><th>Mileage</th><th>Fitness</th><th>Fitness Valid</th><th>Jobcard Open</th><th>Branding Priority</th><th>Model</th><th>Cleaning Record</th><th>Reasoning</th></tr>';
-  schedule.forEach(s=>{
-    html += `<tr class="${s.assigned}">`+
-      `<td>${s.train_id ?? ''}</td>`+
-      `<td>${s.assigned ?? ''}</td>`+
-      `<td>${s.mileage_km ?? ''}</td>`+
-      `<td>${s.fitness_score ?? ''}</td>`+
-      `<td>${s.fitness_valid ? 'yes' : 'no'}</td>`+
-      `<td>${s.jobcard_open ? 'yes' : 'no'}</td>`+
-      `<td>${s.branding_priority ?? ''}</td>`+
-      `<td>${s.model ?? ''}</td>`+
-      `<td>${s.has_cleaning_record ? 'yes' : 'no'}</td>`+
-      `<td>${(s.explanation||[]).join(', ')}</td>`+
-    `</tr>`;
+  window._lastSchedule = schedule;
+  const filtered = (schedule || []).filter(s=>{
+    const byState = currentStateFilter === 'all' || s.assigned === currentStateFilter;
+    const q = (els.searchTrain.value || '').trim().toLowerCase();
+    const bySearch = !q || String(s.train_id || '').toLowerCase().includes(q);
+    return byState && bySearch;
   });
-  html += '</table>';
-  document.getElementById('schedule').innerHTML = html;
+  els.scheduleTable.innerHTML = filtered.map(s=>`
+    <tr>
+      <td>${s.train_id ?? ''}</td>
+      <td>${stateBadge(s.assigned)}</td>
+      <td>${s.mileage_km ?? ''}</td>
+      <td>${s.fitness_score ?? ''}</td>
+      <td>${yesno(s.fitness_valid)}</td>
+      <td>${yesno(s.jobcard_open)}</td>
+      <td>${s.branding_priority ?? ''}</td>
+      <td>${s.model ?? ''}</td>
+      <td>${s.cleaning_due ? 'Due' : '—'}</td>
+      <td>${(s.explanation||[]).join(', ')}</td>
+    </tr>
+  `).join('');
 }
 
-document.getElementById('runBtn').addEventListener('click', runScheduler);
-document.getElementById('refreshBtn').addEventListener('click', async ()=>{
-  const data = await fetchData();
-  renderData(data);
+function renderRanked(ranked){
+  els.rankedTable.innerHTML = (ranked || []).map(r=>`
+    <tr>
+      <td>${r.train_id ?? ''}</td>
+      <td>${stateBadge(r.assigned)}</td>
+      <td>${r.rank_score ?? ''}</td>
+      <td>${r.fitness_score ?? ''}</td>
+      <td>${r.branding_priority ?? ''}</td>
+      <td>${r.mileage_km ?? ''}</td>
+      <td>${r.cleaning_due ? 'Due' : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function toCSV(rows){
+  const esc = v=> '"' + String(v ?? '').replaceAll('"','""') + '"';
+  const header = ['train_id','assigned','rank_score','fitness_score','branding_priority','mileage_km','cleaning_due'];
+  const lines = [header.map(esc).join(',')].concat(rows.map(r=>[
+    r.train_id, r.assigned, r.rank_score, r.fitness_score, r.branding_priority, r.mileage_km, r.cleaning_due
+  ].map(esc).join(',')));
+  return lines.join('\n');
+}
+
+let lastRanked = [];
+els.rankedExportBtn.addEventListener('click', ()=>{
+  const csv = toCSV(lastRanked);
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ranked_schedule.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 });
 
-// initial load
-fetchData().then(renderData);
+els.runBtn.addEventListener('click', runScheduler);
+els.refreshBtn.addEventListener('click', fetchData);
+
+// What-if simulator: dual run and diff rendering
+const whatIf = {
+  baselineClean: document.getElementById('baselineClean'),
+  baselineFail: document.getElementById('baselineFail'),
+  scenarioClean: document.getElementById('scenarioClean'),
+  scenarioFail: document.getElementById('scenarioFail'),
+  runBtn: document.getElementById('whatIfRunBtn'),
+  status: document.getElementById('whatIfStatus'),
+  baselineSummary: document.getElementById('baselineSummary'),
+  scenarioSummary: document.getElementById('scenarioSummary'),
+  diffTable: document.getElementById('whatIfDiffTable')
+};
+
+function summarize(schedule){
+  const counts = {run:0, standby:0, maintenance:0, cleaning:0};
+  schedule.forEach(s=>{ if(s.assigned && counts[s.assigned] !== undefined) counts[s.assigned]++; });
+  return `${counts.run} run • ${counts.standby} standby • ${counts.maintenance} maint • ${counts.cleaning} cleaning`;
+}
+
+function buildIndex(schedule){
+  const map = new Map();
+  schedule.forEach(s=> map.set(s.train_id, s));
+  return map;
+}
+
+function diffSchedules(base, scen){
+  const baseIdx = buildIndex(base);
+  const scenIdx = buildIndex(scen);
+  const trains = new Set([...baseIdx.keys(), ...scenIdx.keys()]);
+  const rows = [];
+  trains.forEach(t=>{
+    const b = baseIdx.get(t); const s = scenIdx.get(t);
+    const ba = b?.assigned || '';
+    const sa = s?.assigned || '';
+    if(ba !== sa){
+      const note = [];
+      if(b?.jobcard_open !== s?.jobcard_open) note.push('jobcard changed');
+      if(b?.fitness_valid !== s?.fitness_valid) note.push('fitness changed');
+      rows.push({train:t, baseline:ba, scenario:sa, note:note.join(', ')});
+    }
+  });
+  return rows.sort((a,b)=> a.train.localeCompare(b.train));
+}
+
+async function runWhatIf(){
+  whatIf.runBtn.disabled = true;
+  els.runBtn.disabled = true; els.refreshBtn.disabled = true;
+  whatIf.status.textContent = 'Running baseline and scenario...';
+  whatIf.diffTable.innerHTML = '';
+  try{
+    const bClean = Math.max(0, parseInt(whatIf.baselineClean.value || '3', 10));
+    const bFail = (whatIf.baselineFail.value || '').trim() || null;
+    const sClean = Math.max(0, parseInt(whatIf.scenarioClean.value || String(bClean), 10));
+    const sFail = (whatIf.scenarioFail.value || '').trim() || null;
+
+    const cleaning_due_threshold = Math.max(0, parseInt(els.cleanThresh.value || '7', 10));
+    const risk_w = parseFloat(els.riskW.value || '50');
+    const mileage_w = parseFloat(els.mileageW.value || '1');
+    const branding_w = parseFloat(els.brandingW.value || '20');
+    const [rBase, rScen] = await Promise.all([
+      fetch('/api/schedule', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cleaning_capacity: bClean, fail_train: bFail, cleaning_due_threshold, risk_w, mileage_w, branding_w})}),
+      fetch('/api/schedule', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cleaning_capacity: sClean, fail_train: sFail, cleaning_due_threshold, risk_w, mileage_w, branding_w})})
+    ]);
+    if(!rBase.ok || !rScen.ok) throw new Error('Failed to compute scenarios');
+    const [base, scen] = await Promise.all([rBase.json(), rScen.json()]);
+
+    whatIf.baselineSummary.textContent = summarize(base.schedule || []);
+    whatIf.scenarioSummary.textContent = summarize(scen.schedule || []);
+
+    const rows = diffSchedules(base.schedule || [], scen.schedule || []);
+    whatIf.diffTable.innerHTML = rows.map(r=>`
+      <tr>
+        <td>${r.train}</td>
+        <td>${stateBadge(r.baseline)}</td>
+        <td>${stateBadge(r.scenario)}</td>
+        <td>${r.note}</td>
+      </tr>
+    `).join('');
+    whatIf.status.textContent = rows.length ? `${rows.length} trains changed` : 'No changes';
+  }catch(err){
+    whatIf.status.textContent = 'Error running what-if';
+  }finally{
+    whatIf.runBtn.disabled = false;
+    els.runBtn.disabled = false; els.refreshBtn.disabled = false;
+  }
+}
+
+document.getElementById('whatIfRunBtn').addEventListener('click', runWhatIf);
+
+fetchData();
+
+function renderConflicts(conflicts){
+  const applyFilters = (reasons)=>{
+    const r = reasons || [];
+    const hasFitness = r.some(x=> x.includes('fitness'));
+    const hasJob = r.some(x=> x.includes('job card'));
+    const hasClean = r.some(x=> x.includes('clean'));
+    if(!els.filterFitness.checked && hasFitness) return false;
+    if(!els.filterJobcard.checked && hasJob) return false;
+    if(!els.filterCleaning.checked && hasClean) return false;
+    return true;
+  };
+  const filtered = (conflicts || []).filter(c=> applyFilters(c.reasons));
+  els.conflictCount.textContent = `${filtered.length} conflicts`;
+  els.conflictsTable.innerHTML = filtered.map(c=>`
+    <tr>
+      <td>${c.train_id}</td>
+      <td>${stateBadge(c.assigned)}</td>
+      <td>${(c.reasons||[]).join(', ')}</td>
+    </tr>
+  `).join('');
+}
+
+els.filterFitness.addEventListener('change', ()=> renderConflicts(window._lastConflicts || []));
+els.filterJobcard.addEventListener('change', ()=> renderConflicts(window._lastConflicts || []));
+els.filterCleaning.addEventListener('change', ()=> renderConflicts(window._lastConflicts || []));
+
+// Advanced panel toggle and presets
+els.toggleAdvanced.addEventListener('click', ()=>{
+  const show = els.advancedPanel.style.display === 'none';
+  els.advancedPanel.style.display = show ? '' : 'none';
+});
+
+function setValues(map){
+  if(map.cleanThresh!=null) els.cleanThresh.value = map.cleanThresh;
+  if(map.minCleanDue!=null) els.minCleanDue.value = map.minCleanDue;
+  if(map.riskW!=null) els.riskW.value = map.riskW;
+  if(map.mileageW!=null) els.mileageW.value = map.mileageW;
+  if(map.brandingW!=null) els.brandingW.value = map.brandingW;
+}
+
+document.getElementById('presetDefault').addEventListener('click', ()=> setValues({cleanThresh:7,minCleanDue:0,riskW:50,mileageW:1,brandingW:20}));
+document.getElementById('presetBrand').addEventListener('click', (e)=>{ setValues({brandingW:35}); pulseButton(e.currentTarget); showToast('Branding push applied'); });
+document.getElementById('presetClean').addEventListener('click', (e)=>{ setValues({cleanThresh:5,minCleanDue:2}); pulseButton(e.currentTarget); showToast('Cleaning push applied'); });
+document.getElementById('presetRisk').addEventListener('click', (e)=>{ setValues({riskW:80}); pulseButton(e.currentTarget); showToast('Risk averse applied'); });
+document.getElementById('presetMileage').addEventListener('click', (e)=>{ setValues({mileageW:3}); pulseButton(e.currentTarget); showToast('Mileage balance applied'); });
+
+// Schedule filters and search
+let currentStateFilter = 'all';
+Array.from(document.querySelectorAll('#stateChips .btn')).forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentStateFilter = btn.dataset.state;
+    renderSchedule(window._lastSchedule || []);
+  });
+});
+els.searchTrain.addEventListener('input', ()=> renderSchedule(window._lastSchedule || []));
+
+// Persist and restore controls
+const storageKeys = ['cleanCap','failTrain','cleanThresh','minCleanDue','riskW','mileageW','brandingW'];
+function saveControls(){
+  const data = {};
+  storageKeys.forEach(k=>{ const el = els[k]; if(el) data[k] = el.value; });
+  localStorage.setItem('kmrl_controls', JSON.stringify(data));
+}
+function loadControls(){
+  try{
+    const raw = localStorage.getItem('kmrl_controls');
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    storageKeys.forEach(k=>{ if(data[k]!=null && els[k]) els[k].value = data[k]; });
+  }catch{}
+}
+storageKeys.forEach(k=>{ const el = els[k]; if(el) el.addEventListener('change', saveControls); });
+loadControls();
+
+// visual pulse for buttons/inputs
+function pulseButton(btn){
+  const prev = btn.style.transform;
+  btn.style.transform = 'scale(0.98)';
+  setTimeout(()=>{ btn.style.transform = prev || 'scale(1)'; }, 120);
+}
+
+['riskW','mileageW','brandingW','cleanThresh','minCleanDue'].forEach(id=>{
+  const input = els[id];
+  if(input){
+    input.addEventListener('change', ()=>{
+      input.style.boxShadow = '0 0 0 4px var(--ring)';
+      setTimeout(()=>{ input.style.boxShadow = ''; }, 250);
+      showToast(`${id} set to ${input.value}`);
+    });
+  }
+});
 </script>
 </body>
 </html>

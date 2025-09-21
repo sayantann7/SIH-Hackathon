@@ -1,0 +1,28 @@
+# Ignore Python caches and venvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Git and editor files
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Node-related (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Do not bake secrets into the image
+.env
+*.env
+
+# Data caches/backups
+*.log
+*.tmp

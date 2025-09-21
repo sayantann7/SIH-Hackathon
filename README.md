@@ -1,8 +1,8 @@
 # SIH25081 MVP - Kochi Metro Train Scheduling Optimizer
 
-This repository contains a full working MVP for the **Smart AI-driven Train Scheduling System** described in SIH Problem Statement **SIH25081**. 
+This repository contains a working MVP for the Smart AI‑driven Train Scheduling System (Problem Statement SIH25081).
 
-The goal is to provide Kochi Metro Rail Limited with a **decision-support system** that automates nightly scheduling of trainsets while considering multiple constraints (fitness certificates, job-card status, branding priorities, mileage balancing, cleaning slots, and stabling geometry).
+It provides a decision-support backend (FastAPI + PuLP) and a simple frontend to generate daily schedules while considering constraints like fitness certificates, job cards, branding priorities, mileage, cleaning capacity, and stabling.
 
 ---
 
@@ -57,22 +57,23 @@ The MVP demonstrates how an AI + optimization-driven system can automate this de
 ## 📂 Project Structure
 
 ```
-sih25081_mvp/
-│── backend_main.py       # FastAPI + PuLP backend
-│── requirements.txt      # Dependencies
-│── README.md             # Project details
-│── Dockerfile            # Container build file
-│── run.sh                # Helper script
-│── data/                 # Synthetic CSV datasets
-│    ├── trains.csv
-│    ├── fitness.csv
-│    ├── jobcard.csv
-│    ├── branding.csv
-│    ├── mileage.csv
-│    ├── cleaning.csv
-│    └── stabling.csv
-│── static/               # Frontend UI
-│    └── index.html
+.
+├─ backend/
+│  └─ main.py            # FastAPI + PuLP scheduler and image ingestion
+├─ data/                 # CSV datasets
+│  ├─ trains.csv
+│  ├─ fitness.csv
+│  ├─ jobcard.csv
+│  ├─ branding.csv
+│  ├─ mileage.csv
+│  ├─ cleaning.csv
+│  └─ stabling.csv
+├─ static/
+│  └─ index.html         # Simple UI
+├─ requirements.txt
+├─ Dockerfile
+├─ .dockerignore
+└─ README.md
 ```
 
 ---
@@ -87,7 +88,7 @@ sih25081_mvp/
 ✅ Offers **what-if simulation** (simulate a train failure, adjust cleaning slots)  
 ✅ Frontend UI to view schedules and rerun optimizer  
 
-➡️ New: Photo ingestion (WhatsApp/logbook) with Groq vision LLM. See [INGESTION.md](./INGESTION.md).
+➡️ Ingestion: Photo/scan ingestion using Groq Vision LLM to update constraints (branding/fitness/cleaning/jobcard). Set `GROQ_API_KEY` in a `.env` file.
 
 ---
 
@@ -110,23 +111,81 @@ sih25081_mvp/
 
 ---
 
-## 📝 Detailed Prompt to Recreate MVP
+---
 
-If you need to regenerate this MVP from scratch, use this prompt:
+## � Run Locally (No Docker)
 
+Requirements:
+- Python 3.11+
+- CBC solver (PuLP will use the built-in CBC in Docker; locally you can use the default CBC bundled with PuLP or install `coin-or-cbc` for your OS)
+
+1) Install dependencies
+```cmd
+cd "c:\Users\offic\Desktop\SIH Hackathon"
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
-Create a full MVP for SIH25081 (AI-driven Train Scheduling for Kochi Metro) with:
-- Backend: Python (FastAPI), PuLP for optimization, Pandas for data handling.
-- Endpoints: `/api/data` (fetch CSVs), `/api/schedule` (run optimizer, return JSON).
-- Constraints: 
-  - Fitness expired → cannot run
-  - Job card open → must rest
-  - Branding priority → must run (add bonus in objective)
-  - Cleaning slot capacity (limit trains in cleaning)
-  - Mileage balancing → minimize variance
-  - What-if simulation: fail_train param forces maintenance
-- Objective: Weighted sum of (risk + mileage deviation - branding bonus).
-- Datasets: 6 CSVs (trains, fitness, jobcard, branding, mileage, cleaning, stabling).
-- Frontend: Minimal HTML/JS page with controls for cleaning capacity and failure simulation, table to display results.
-- Deliverables: backend_main.py, requirements.txt, datasets, static/index.html, Dockerfile, README.md.
+
+2) Set up environment variables with `.env`
+Create a file named `.env` in the project root:
+```env
+GROQ_API_KEY=your_real_groq_api_key_here
+# Optional: override model
+# GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
 ```
+
+3) Start the server
+```cmd
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+4) Open the app
+- UI: http://localhost:8000
+- Data: GET http://localhost:8000/api/data
+- Schedule: POST http://localhost:8000/api/schedule
+- Ingest image: POST multipart to http://localhost:8000/api/ingest-image
+
+---
+
+## 🐳 Run with Docker
+
+The image exposes port `8000` and the app loads `GROQ_API_KEY` from `.env` at runtime. We also mount `data/` so your CSVs are editable outside the container.
+
+1) Build the image
+```cmd
+cd "c:\Users\offic\Desktop\SIH Hackathon"
+docker build -t kmrl-scheduler:latest .
+```
+
+2) Create `.env` (if not already)
+```env
+GROQ_API_KEY=your_real_groq_api_key_here
+# GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+```
+
+3) Run the container mapping port `8000` and passing `.env`
+```cmd
+docker run --rm -p 8000:8000 --env-file .env -v "%cd%\data":/app/data kmrl-scheduler:latest
+```
+
+4) Open the app
+- UI: http://localhost:8000
+
+Notes:
+- `.dockerignore` ensures `.env` is not copied into the image. It’s provided at runtime with `--env-file`.
+- The container installs `coinor-cbc` so PuLP has a solver available.
+- If you need to persist logs or other folders, add additional `-v` volume flags.
+
+---
+
+## Troubleshooting
+
+- 400 Missing GROQ_API_KEY on ingest-image: Ensure `.env` contains `GROQ_API_KEY` and that you passed it with `--env-file` in Docker or placed `.env` in project root for non-Docker runs.
+- Only one train in schedule: Ensure you pulled latest code; the result assembly loop was fixed.
+- CSV parsing issues: Check timestamp formats; the backend handles mixed formats but malformed columns may still need cleaning.
+
+---
+
+## License
+
+MIT (for MVP demonstration purposes)

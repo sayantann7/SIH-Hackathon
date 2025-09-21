@@ -1,0 +1,27 @@
+timestamp,filename,size_bytes,model,entries_json,updates_json,raw_excerpt
+2025-09-21T13:33:30Z,WhatsApp Image 2025-09-21 at 18.57.48_a30f24ce.jpg,141916,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""cleaning due""}, {""train_id"": ""T6"", ""status"": ""maintenance"", ""notes"": ""fitness low""}, {""train_id"": ""T7"", ""status"": ""run"", ""notes"": ""Has branding priority""}]","[{""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T6"", ""action"": ""jobcard_open=1""}, {""train_id"": ""T7"", ""action"": ""fitness_valid=1,score=1.0""}]","{""entries"": [
+  {""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""cleaning due""},
+  {""train_id"": ""T6"", ""status"": ""maintenance"", ""notes"": ""fitness low""},
+  {""train_id"": ""T7"", ""status"": ""run"", ""notes"": ""Has branding priority""}
+]}"
+2025-09-21T13:43:33Z,WhatsApp Image 2025-09-21 at 18.57.48_a30f24ce.jpg,141916,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""cleaning due""}, {""train_id"": ""T6"", ""status"": ""maintenance"", ""notes"": ""fitness low""}, {""train_id"": ""T7"", ""status"": ""run"", ""notes"": ""Has branding priority""}]","[{""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T6"", ""action"": ""jobcard_open=1""}, {""train_id"": ""T6"", ""action"": ""fitness_valid=1,score=0.3""}, {""train_id"": ""T7"", ""action"": ""fitness_valid=1,score=1.0""}, {""train_id"": ""T7"", ""action"": ""branding.priority=1""}]","```
+{
+  ""entries"": [
+    {
+      ""train_id"": ""T2"",
+      ""status"": ""cleaning"",
+      ""notes"": ""cleaning due""
+    },
+    {
+      ""train_id"": ""T6"",
+      ""status"": ""maintenance"",
+      ""notes"": ""fitness low""
+    },
+    {
+      ""train_id"": ""T7"",
+      ""status"": ""run"",
+      ""notes"": ""Has branding priority""
+    }
+  ]
+}
+```"

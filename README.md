@@ -87,6 +87,8 @@ sih25081_mvp/
 ✅ Offers **what-if simulation** (simulate a train failure, adjust cleaning slots)  
 ✅ Frontend UI to view schedules and rerun optimizer  
 
+➡️ New: Photo ingestion (WhatsApp/logbook) with Groq vision LLM. See [INGESTION.md](./INGESTION.md).
+
 ---
 
 ## 🔥 Stretch Features

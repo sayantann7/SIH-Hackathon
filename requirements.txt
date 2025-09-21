@@ -5,3 +5,5 @@ pulp
 python-multipart
 jinja2
 requests
+groq
+python-dotenv

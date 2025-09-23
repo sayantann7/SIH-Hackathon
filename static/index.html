@@ -19,22 +19,24 @@
       background-size:max(160px, calc((100vw - 1100px)/2)) auto, max(160px, calc((100vw - 1100px)/2)) auto}
   .container{max-width:1100px;margin:0 auto;padding:24px;transition:opacity .25s ease, filter .25s ease}
     header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 20px}
-    .title{font-weight:700;font-size:22px;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
+  .title{font-weight:700;font-size:22px;letter-spacing:.2px;display:flex;align-items:center;gap:10px}
     .logo{height:28px;width:auto;display:inline-block}
     .subtitle{color:var(--muted);font-size:14px;margin-top:4px}
-    .header-right{display:flex;gap:8px}
+  .header-right{display:flex;gap:8px}
+  .brand-badge{display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px;margin-left:8px}
     .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
     .field{display:flex;flex-direction:column;gap:6px}
     label{font-size:12px;color:var(--muted)}
     input{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit;min-width:160px;background:#fff}
     input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--ring)}
-    .btn{appearance:none;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+  .btn{appearance:none;border:1px solid var(--primary);background:var(--primary);color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
     .btn.secondary{background:#fff;color:var(--primary)}
     .btn:active{transform:translateY(1px)}
     .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn .icon{width:16px;height:16px;display:inline-block;opacity:.9}
     .tabs{display:flex;gap:6px;margin-top:14px}
-    .tab{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-weight:600}
+  .tab{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
     .tab.active{border-color:var(--primary);color:var(--primary);background:var(--ring)}
     .section{margin-top:14px}
     .hint{font-size:12px;color:var(--muted)}
@@ -95,6 +97,15 @@
   @keyframes railScrollRight{0%{background-position:right 0}100%{background-position:right 1800px}}
     @keyframes barFlow{0%{background-position:0 0}100%{background-position:200% 0}}
     @keyframes fadeOut{to{opacity:0;visibility:hidden}}
+  /* Photo scan results modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:10001}
+    .modal-overlay.show{display:flex}
+    .modal{background:#fff;border:1px solid var(--border);border-radius:14px;max-width:760px;width:92vw;max-height:78vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(2,6,23,.2)}
+    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .modal header .title{font-size:16px}
+    .modal .body{padding:12px 16px;overflow:auto}
+    .modal .footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+    .kbd{font:12px/1.8 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#f3f4f6;border:1px solid #e5e7eb;border-bottom-color:#d1d5db;padding:0 6px;border-radius:6px}
   </style>
 </head>
 <body class="loading">
@@ -110,41 +121,50 @@
   <div class="container">
     <header>
       <div>
-        <div class="title"><img class="logo" style="width: 50px; height: 50px;" src="/static/assets/logo.png" alt="KMRL"/> Kochi Metro Rail Ltd Scheduler</div>
-        <div class="subtitle">Plan daily rolling stock with constraints and simulations</div>
+        <div class="title"><img class="logo" style="width: 50px; height: 50px;" src="/static/assets/logo.png" alt="KMRL"/> Kochi Metro Rail – Scheduling Assistant <span class="brand-badge">AI‑assisted</span></div>
+        <div class="subtitle">Create tomorrow’s train plan in minutes. Scan a photo, review the changes, and generate a clear schedule with reasons.</div>
       </div>
       <div class="header-right">
-        <button id="refreshBtn" class="btn secondary">Refresh data</button>
-        <button id="runBtn" class="btn">Run scheduler</button>
+        <button id="refreshBtn" class="btn secondary" title="Reload datasets from CSVs">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6v3l4-4-4-4v3a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6z"/></svg>
+          Refresh
+        </button>
+        <button id="runBtn" class="btn" title="Generate schedule">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Create schedule
+        </button>
         <input type="file" id="ingestInput" accept="image/*" style="display:none" />
-        <button id="ingestBtn" class="btn secondary" title="Upload WhatsApp or logbook photo">Ingest image</button>
+        <button id="ingestBtn" class="btn secondary" title="Upload WhatsApp or logbook photo">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm8 3a4 4 0 1 0 .001 8.001A4 4 0 0 0 12 10z"/></svg>
+          Scan photo
+        </button>
       </div>
     </header>
 
     <div class="card">
       <div class="controls">
         <div class="field">
-          <label for="cleanCap">Cleaning capacity</label>
+          <label for="cleanCap">Cleaning slots today</label>
           <input id="cleanCap" type="number" value="3" min="0" max="50" />
         </div>
         <div class="field">
-          <label for="failTrain">Simulate failure (train id)</label>
-          <input id="failTrain" placeholder="e.g. T5" />
+          <label for="failTrain">Mark train out of service</label>
+          <input id="failTrain" placeholder="e.g. T5" title="Type a train like T5 to keep it out of service" />
         </div>
         <div class="field">
-          <label for="presetBar">Presets</label>
+          <label for="presetBar">Quick presets</label>
           <div class="row" id="presetBar" style="gap:6px">
-            <button class="btn secondary" id="presetDefault">Default</button>
-            <button class="btn secondary" id="presetBrand">Branding push</button>
-            <button class="btn secondary" id="presetClean">Cleaning push</button>
-            <button class="btn secondary" id="presetRisk">Risk averse</button>
-            <button class="btn secondary" id="presetMileage">Balance mileage</button>
+            <button class="btn secondary" id="presetDefault" title="Restore recommended values">Default</button>
+            <button class="btn secondary" id="presetBrand" title="Favor branded trains">Branding boost</button>
+            <button class="btn secondary" id="presetClean" title="Clean more trains today">Cleaning boost</button>
+            <button class="btn secondary" id="presetRisk" title="Be conservative with low fitness">Risk averse</button>
+            <button class="btn secondary" id="presetMileage" title="Even out mileage among runners">Balance mileage</button>
           </div>
         </div>
-        <button class="btn secondary" id="toggleAdvanced">Advanced</button>
+        <button class="btn secondary" id="toggleAdvanced">More options</button>
         <div class="field">
           <label>&nbsp;</label>
-          <div class="hint">Use Data/Schedule tabs below to inspect outputs.</div>
+          <div class="hint">Tip: After scanning a photo, review the suggested changes, then click <strong>Create schedule</strong>.</div>
         </div>
       </div>
       <div id="advancedPanel" class="card" style="display:none;margin-top:10px">
@@ -172,11 +192,11 @@
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" data-tab="data">Data</button>
-        <button class="tab" data-tab="schedule">Schedule</button>
-        <button class="tab" data-tab="ranked">Ranked</button>
-        <button class="tab" data-tab="conflicts">Conflicts</button>
-        <button class="tab" data-tab="whatif">What-if</button>
+        <button class="tab active" data-tab="data"><span>🚇</span> Trains</button>
+        <button class="tab" data-tab="schedule"><span>🗓️</span> Schedule</button>
+        <button class="tab" data-tab="ranked"><span>📊</span> Insights</button>
+        <button class="tab" data-tab="conflicts"><span>⚠️</span> Issues</button>
+        <button class="tab" data-tab="whatif"><span>🧪</span> What‑if</button>
       </div>
     </div>
 
@@ -258,13 +278,13 @@
 
     <div class="section" id="section-schedule" style="display:none">
       <div class="rules">
-        <strong>Optimization rules</strong>
+        <strong>How the plan is created</strong>
         <ul>
-          <li>Each train is assigned exactly one: <em>run</em>, <em>standby</em>, <em>maintenance</em>, or <em>cleaning</em>.</li>
-          <li>Fitness invalid or below threshold cannot run; open jobcard forces maintenance.</li>
-          <li>Cleaning capacity respected; can require minimum due-cleaning trains.</li>
-          <li>Global levels: min/max run, standby, and maintenance capacity constraints.</li>
-          <li>Branding rewarded in objective; can enforce minimum branded run.</li>
+          <li>Every train gets one status: <em>Run</em>, <em>Standby</em>, <em>Maintenance</em>, or <em>Cleaning</em>.</li>
+          <li>Trains with expired fitness don’t run; open job cards go to maintenance.</li>
+          <li>Cleaning slots are limited; due trains can be prioritized.</li>
+          <li>We keep service levels realistic with min/max caps for each group.</li>
+          <li>Branding is encouraged so priority trains make it to service.</li>
         </ul>
       </div>
       <div class="row" style="margin:8px 0;align-items:center">
@@ -285,15 +305,15 @@
           <thead>
             <tr>
               <th>Train</th>
-              <th>Assigned</th>
+              <th>Status</th>
               <th>Mileage</th>
               <th>Fitness</th>
               <th>Valid</th>
               <th>Jobcard</th>
               <th>Branding</th>
               <th>Model</th>
-              <th>Cleaning rec</th>
-              <th>Reasoning</th>
+              <th>Clean</th>
+              <th>Why</th>
             </tr>
           </thead>
           <tbody id="scheduleTable"></tbody>
@@ -304,7 +324,7 @@
 
     <div class="section" id="section-ranked" style="display:none">
       <div class="row" style="align-items:center">
-        <div class="hint">Ordered by optimizer rank score (lower is better)</div>
+        <div class="hint">Ordered by rank score (lower is better)</div>
         <button id="rankedExportBtn" class="btn secondary">Export CSV</button>
       </div>
       <div class="table-wrap" style="margin-top:10px">
@@ -327,7 +347,7 @@
 
     <div class="section" id="section-conflicts" style="display:none">
       <div class="card">
-        <div style="font-weight:700;margin-bottom:8px">Filters</div>
+        <div style="font-weight:700;margin-bottom:8px">Show only</div>
         <div class="filters-vertical">
           <div class="field"><input id="fFitness" type="checkbox" checked /><label for="fFitness">Fitness</label></div>
           <div class="field"><input id="fJobcard" type="checkbox" checked /><label for="fJobcard">Jobcard</label></div>
@@ -346,6 +366,22 @@
           </thead>
           <tbody id="conflictsTable"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+  <!-- Photo scan results modal -->
+  <div id="ingestModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ingestModalTitle">
+      <header>
+        <div class="title" id="ingestModalTitle">Photo scan results</div>
+        <button id="ingestModalClose" class="btn secondary">Close</button>
+      </header>
+      <div id="ingestModalBody" class="body">
+        <!-- filled dynamically -->
+      </div>
+      <div class="footer">
+        <button id="ingestCopyBtn" class="btn secondary" title="Copy summary to clipboard">Copy summary</button>
+        <button id="ingestOkBtn" class="btn">Done</button>
       </div>
     </div>
   </div>
@@ -379,6 +415,11 @@ const els = {
   refreshBtn: document.getElementById('refreshBtn'),
   ingestBtn: document.getElementById('ingestBtn'),
   ingestInput: document.getElementById('ingestInput'),
+  ingestModal: document.getElementById('ingestModal'),
+  ingestModalBody: document.getElementById('ingestModalBody'),
+  ingestModalClose: document.getElementById('ingestModalClose'),
+  ingestOkBtn: document.getElementById('ingestOkBtn'),
+  ingestCopyBtn: document.getElementById('ingestCopyBtn'),
   cleanCap: document.getElementById('cleanCap'),
   failTrain: document.getElementById('failTrain'),
   minCleanDue: document.getElementById('minCleanDue'),
@@ -569,20 +610,70 @@ els.ingestInput.addEventListener('change', async ()=>{
   const fd = new FormData();
   fd.append('file', f);
   try{
-    showToast('Uploading image...');
+    showToast('Scanning photo...');
     const r = await fetch('/api/ingest-image', { method:'POST', body: fd });
     if(!r.ok) throw new Error('Ingest failed');
     const res = await r.json();
-    const n = (res.parsed || []).length || 0;
-    showToast(`Ingested ${n} entr${n===1?'y':'ies'}`);
+    // Show detailed updates instead of only a toast
+    const updates = Array.isArray(res.updates) ? res.updates : [];
+    showIngestionUpdates(updates, res.parsed || []);
     // refresh data to reflect CSV updates
     await fetchData();
   }catch(e){
-    showToast('Failed to ingest image');
+    showToast('Photo scan failed');
   }finally{
     els.ingestInput.value = '';
   }
 });
+
+function groupUpdates(updates){
+  const byTrain = new Map();
+  (updates||[]).forEach(u=>{
+    const t = String(u.train_id||'').trim() || '—';
+    const action = String(u.action||'').trim() || '—';
+    if(!byTrain.has(t)) byTrain.set(t, new Set());
+    byTrain.get(t).add(action);
+  });
+  // convert to sorted array
+  return Array.from(byTrain.entries()).map(([train, actions])=>({train, actions: Array.from(actions)})).sort((a,b)=> a.train.localeCompare(b.train));
+}
+
+function showIngestionUpdates(updates, parsed){
+  const groups = groupUpdates(updates);
+  const count = updates?.length || 0;
+  // Build HTML
+  const body = els.ingestModalBody;
+  if(!groups.length){
+    body.innerHTML = `<div class="hint">No changes were made from this photo. If you expected updates, check that <span class="kbd">GROQ_API_KEY</span> is set and the photo text is clear.</div>`;
+  }else{
+    body.innerHTML = `
+      <div class="help" style="margin-bottom:8px">${count} change${count===1?'':'s'} applied across ${groups.length} train${groups.length===1?'':'s'}. Review below and then generate the schedule.</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Train</th><th>Changes</th></tr></thead>
+          <tbody>
+            ${groups.map(g=>`<tr><td>${g.train}</td><td>${g.actions.map(a=>`<span class="pill" style="margin-right:6px">${a}</span>`).join(' ')}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  // show modal
+  els.ingestModal.classList.add('show');
+  els.ingestModal.setAttribute('aria-hidden','false');
+
+  const close = ()=>{
+    els.ingestModal.classList.remove('show');
+    els.ingestModal.setAttribute('aria-hidden','true');
+  };
+  const copy = ()=>{
+    const lines = groups.length ? groups.map(g=> `${g.train}: ${g.actions.join('; ')}`) : ['No dataset changes.'];
+    navigator.clipboard.writeText(lines.join('\n')).then(()=> showToast('Summary copied'));
+  };
+  els.ingestModalClose.onclick = close;
+  els.ingestOkBtn.onclick = close;
+  els.ingestCopyBtn.onclick = copy;
+}
 
 // What-if simulator: dual run and diff rendering
 const whatIf = {

@@ -25,3 +25,24 @@ timestamp,filename,size_bytes,model,entries_json,updates_json,raw_excerpt
   ]
 }
 ```"
+2025-09-21T19:13:27Z,WhatsApp Image 2025-09-21 at 18.57.48_a30f24ce.jpg,141916,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""cleaning due""}, {""train_id"": ""T6"", ""status"": ""maintenance"", ""notes"": ""fitness low""}, {""train_id"": ""T7"", ""status"": ""run"", ""notes"": ""Has branding priority""}]","[{""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T6"", ""action"": ""jobcard_open=1""}, {""train_id"": ""T6"", ""action"": ""fitness_valid=1,score=0.3""}, {""train_id"": ""T7"", ""action"": ""fitness_valid=1,score=1.0""}, {""train_id"": ""T7"", ""action"": ""branding.priority=1""}]","{""entries"": [
+  {""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""cleaning due""},
+  {""train_id"": ""T6"", ""status"": ""maintenance"", ""notes"": ""fitness low""},
+  {""train_id"": ""T7"", ""status"": ""run"", ""notes"": ""Has branding priority""}
+]}"
+2025-09-21T19:15:59Z,Screenshot 2025-09-22 004534.png,45005,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T22"", ""status"": ""run"", ""notes"": ""Job Card opened and removed branding priority""}]","[{""train_id"": ""T22"", ""action"": ""fitness_valid=1,score=1.0""}, {""train_id"": ""T22"", ""action"": ""branding.priority=1""}]","```
+{
+  ""entries"": [
+    {
+      ""train_id"": ""T22"",
+      ""status"": ""run"",
+      ""notes"": ""Job Card opened and removed branding priority""
+    }
+  ]
+}
+```"
+2025-09-23T11:26:48Z,whatsapp-screenshot-demo.jpg,161486,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""40 days cleaning due""}, {""train_id"": ""T16"", ""status"": ""maintenance"", ""notes"": ""fitness very low""}, {""train_id"": ""T37"", ""status"": ""standby"", ""notes"": ""Has branding priority""}]","[{""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T16"", ""action"": ""jobcard_open=1""}, {""train_id"": ""T37"", ""action"": ""fitness_valid=1,score=0.8""}, {""train_id"": ""T37"", ""action"": ""branding.priority=1""}]","{""entries"": [
+  {""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""40 days cleaning due""},
+  {""train_id"": ""T16"", ""status"": ""maintenance"", ""notes"": ""fitness very low""},
+  {""train_id"": ""T37"", ""status"": ""standby"", ""notes"": ""Has branding priority""}
+]}"

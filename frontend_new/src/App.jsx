@@ -263,7 +263,7 @@ export default function App() {
                 <p className="text-[11px] text-steel-500">{trainsBase.length} trains loaded</p>
                 {/* Helper to format IDs like T1 => T-1 for user expectation */}
                 {/* (kept internal id untouched for logic) */}
-                <div className="card p-0 overflow-auto h-[500px] scroll-thin pb-5"> {/* Increased bottom padding for clear end-of-list visibility */}
+                <div className="card p-0 overflow-y-auto overflow-x-hidden h-[500px] scroll-thin pb-5"> {/* Added overflow-x-hidden to prevent horizontal scroll; bottom padding retained for end-of-list visibility */}
                   <table className="simple table-fixed w-full">
                     <thead>
                       <tr>

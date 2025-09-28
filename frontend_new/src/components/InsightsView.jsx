@@ -9,16 +9,16 @@ function statusChip(s) {
 export default function InsightsView({ ranked }) {
   const rows = useMemo(()=>{
     if (!ranked||!ranked.length) return []
-    return [...ranked].sort((a,b)=> (a.rank_score??0) - (b.rank_score??0))
+    // No explicit rank score column; keep original ordering or fallback to train_id
+    return [...ranked]
   }, [ranked])
 
   function exportCsv(){
     if(!rows.length) return
-    const header = ['train_id','assigned','rank_score','fitness_score','branding_priority','mileage_km','cleaning_due']
+    const header = ['train_id','assigned','fitness_score','branding_priority','mileage_km','cleaning_due']
     const lines = rows.map(r => [
       r.train_id,
       r.assigned||'',
-      r.rank_score==null?'':r.rank_score,
       r.fitness_score==null?'':r.fitness_score,
       r.branding_priority==null?'':r.branding_priority,
       r.mileage_km==null?'':r.mileage_km,
@@ -35,17 +35,16 @@ export default function InsightsView({ ranked }) {
 
   return (
     <div className="flex flex-col h-full gap-3">
-      <div className="flex items-center gap-6">
-        <div className="text-[12px] text-steel-600">Ordered by rank score (lower is better)</div>
+  <div className="flex items-center gap-6">
+	<div className="text-[16px] font-semibold text-steel-800 tracking-wide">Insights Overview</div>
         <button onClick={exportCsv} className="btn-secondary text-[13px]">Export CSV</button>
       </div>
-      <div className="card p-0 overflow-auto flex-1 scroll-thin">
+      <div className="card p-0 overflow-auto flex-1 scroll-thin pb-3">
         <table className="simple w-full table-fixed">
           <thead>
             <tr>
               <th className="w-20">Train</th>
               <th className="w-28">Assigned</th>
-              <th className="w-32">Rank score</th>
               <th className="w-24">Fitness</th>
               <th className="w-24">Branding</th>
               <th className="w-28">Mileage</th>
@@ -57,7 +56,6 @@ export default function InsightsView({ ranked }) {
               <tr key={r.train_id} className="odd:bg-white even:bg-steel-50/40">
                 <td className="font-medium text-steel-800">{r.train_id}</td>
                 <td>{statusChip(r.assigned)}</td>
-                <td className="text-[11px]">{r.rank_score}</td>
                 <td>{r.fitness_score!=null ? r.fitness_score : '—'}</td>
                 <td>{r.branding_priority!=null ? r.branding_priority : '—'}</td>
                 <td>{r.mileage_km!=null ? r.mileage_km : '—'}</td>
@@ -66,9 +64,13 @@ export default function InsightsView({ ranked }) {
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={7} className="text-center py-6 text-[11px] text-steel-500">Run a schedule to view insights.</td>
+                <td colSpan={6} className="text-center py-6 text-[11px] text-steel-500">Run a schedule to view insights.</td>
               </tr>
             )}
+            {/* Spacer row for comfortable end-of-scroll breathing room */}
+            <tr aria-hidden="true">
+              <td colSpan={6} className="p-0 h-4"></td>
+            </tr>
           </tbody>
         </table>
       </div>

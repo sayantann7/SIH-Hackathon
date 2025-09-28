@@ -8,8 +8,8 @@ function statusChip(s) {
 
 export default function TrainTable({ trains }) {
   return (
-    <div className="card p-0 overflow-auto max-h-[70vh] scroll-thin">
-      <table className="simple">
+    <div className="card p-0 overflow-y-auto overflow-x-hidden max-h-[70vh] scroll-thin relative px-1">
+      <table className="simple table-fixed w-full">
         <thead>
           <tr>
             <th className="w-20">Train</th>
@@ -32,9 +32,9 @@ export default function TrainTable({ trains }) {
               <td>{t.fitness_score != null ? (t.fitness_score).toFixed(2) : '—'}</td>
               <td>{t.branding_priority ? <span className="chip">P{t.branding_priority}</span> : '—'}</td>
               <td>{t.cleaning_due ? <span className="chip-cleaning chip">Due</span> : t.has_cleaning_record ? <span className="chip">OK</span> : '—'}</td>
-              <td>{t.jobcard_open ? <span className="chip-maintenance chip">Open</span> : '—'}</td>
+              <td>{t.jobcard_open ? <span className="chip-jobcard chip">Open</span> : '—'}</td>
               <td>{t.stabling_site || '—'}</td>
-              <td className="text-[11px] leading-snug space-y-0.5">{(t.explanation||[]).map((e,i)=><div key={i}>{e}</div>)}</td>
+              <td className="text-[12px] font-semibold leading-snug space-y-0.5 whitespace-normal break-words pr-1">{(t.explanation||[]).map((e,i)=><div key={i}>{e}</div>)}</td>
             </tr>
           ))}
         </tbody>

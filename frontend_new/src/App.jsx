@@ -8,6 +8,12 @@ import TrainTable from './components/TrainTable'
 import { fetchSnapshot, runSchedule, uploadImage } from './api/client'
 import WelcomeSplash from './components/WelcomeSplash'
 import InsightsView from './components/InsightsView'
+// Tab icons
+import trainIcon from './assets/train.png'
+import scheduleIcon from './assets/schedule (1).png'
+import diagramIcon from './assets/growth.png'
+import alertIcon from './assets/alert.png'
+import settingsIcon from './assets/settings.png'
 
 // Fallback static trains list (Train, Model, Capacity) used if backend snapshot returns no trains
 const STATIC_TRAINS = [
@@ -111,6 +117,9 @@ export default function App() {
       const res = await runSchedule(params)
       setSchedule(res.schedule || [])
       setConflicts(res.conflicts || [])
+      // Navigate to schedule tab & toast success
+      setActiveTab('schedule')
+      pushToast('Schedule created.', { type: 'success' })
     } catch(e) { console.error(e) } finally { setRunning(false) }
   }
   async function scan(file) {
@@ -190,6 +199,11 @@ export default function App() {
       ])
       setWhatIfBaselineSchedule(baseRes.schedule||[])
       setWhatIfScenarioSchedule(scenRes.schedule||[])
+      // Toast feedback
+      setToasts(list => [
+        ...list,
+        { id: Date.now()+Math.random(), message: 'What-if comparison complete.', type: 'success' }
+      ])
     } catch(e){ console.error('What-if comparison failed', e) }
     finally { setWhatIfLoading(false) }
   }
@@ -215,11 +229,11 @@ export default function App() {
   }, [whatIfBaselineSchedule, whatIfScenarioSchedule])
 
   const tabs = [
-    { id: 'trains', label: 'Trains', icon: '🚆' },
-    { id: 'schedule', label: 'Schedule', icon: '📅' },
-    { id: 'insights', label: 'Insights', icon: '📊' },
-    { id: 'issues', label: 'Issues', icon: '⚠️' },
-    { id: 'whatif', label: 'What-if', icon: '🛠️' }
+    { id: 'trains', label: 'Trains', icon: trainIcon, alt: 'Trains' },
+    { id: 'schedule', label: 'Schedule', icon: scheduleIcon, alt: 'Schedule' },
+    { id: 'insights', label: 'Insights', icon: diagramIcon, alt: 'Insights' },
+    { id: 'issues', label: 'Issues', icon: alertIcon, alt: 'Issues' },
+  { id: 'whatif', label: 'What-if', icon: settingsIcon, alt: 'What-if' }
   ]
 
   return (
@@ -235,9 +249,10 @@ export default function App() {
                 <button
                   key={t.id}
                   onClick={()=>setActiveTab(t.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl border transition-colors text-[13px] font-medium ${activeTab===t.id ? 'bg-aqua-50 border-aqua-400 text-aqua-700 shadow-sm' : 'bg-white border-steel-200 text-steel-600 hover:border-aqua-300 hover:text-aqua-700'}`}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border transition-all text-[14px] font-semibold tracking-wide ${activeTab===t.id ? 'bg-aqua-50 border-aqua-400 text-aqua-700 shadow-md' : 'bg-white border-steel-200 text-steel-600 hover:border-aqua-300 hover:text-aqua-700 hover:shadow-sm'}`}
                 >
-                  <span className="text-[15px] leading-none">{t.icon}</span>{t.label}
+                  <img src={t.icon} alt={t.alt} className="w-5 h-5 object-contain -mt-0.5" />
+                  {t.label}
                 </button>
               ))}
             </div>
@@ -248,7 +263,7 @@ export default function App() {
                 <p className="text-[11px] text-steel-500">{trainsBase.length} trains loaded</p>
                 {/* Helper to format IDs like T1 => T-1 for user expectation */}
                 {/* (kept internal id untouched for logic) */}
-                <div className="card p-0 overflow-auto h-[500px] scroll-thin pb-3"> {/* ~10 rows visible then internal scroll; extra padding so last row fully visible when hovered */}
+                <div className="card p-0 overflow-auto h-[500px] scroll-thin pb-5"> {/* Increased bottom padding for clear end-of-list visibility */}
                   <table className="simple table-fixed w-full">
                     <thead>
                       <tr>
@@ -270,7 +285,7 @@ export default function App() {
                       })}
                       {/* Spacer row to guarantee full visibility for final train row when scaled on hover */}
                       <tr aria-hidden="true">
-                        <td colSpan={3} className="p-0 h-2"></td>
+                        <td colSpan={3} className="p-0 h-4"></td>
                       </tr>
                     </tbody>
                   </table>
@@ -282,7 +297,7 @@ export default function App() {
             )}
 
             {activeTab === 'schedule' && (
-              <div className="flex flex-col">
+              <div className="flex flex-col overflow-x-hidden">
                 <FiltersBar filters={filters} onToggle={setFilters} onShowControls={()=>setSidebarOpen(true)} />
                 <TrainTable trains={filtered} />
                 {filtered.length===0 && <p className="mt-4 text-xs text-steel-500">No trains match current filters.</p>}
@@ -314,7 +329,7 @@ export default function App() {
                 </div>
                 {!schedule.length && <p className="text-[12px] text-steel-500">Run a schedule to view conflicts.</p>}
                 {!!schedule.length && (
-                  <div className="card p-0 overflow-auto max-h-[65vh] scroll-thin">
+                  <div className="card p-0 overflow-auto max-h-[65vh] scroll-thin pb-2">
                     <table className="simple table-fixed w-full">
                       <thead>
                         <tr>
@@ -332,7 +347,7 @@ export default function App() {
                                 <span className={`chip ${c.assigned==='maintenance'?'chip-maintenance': c.assigned==='standby'?'chip-standby': c.assigned==='cleaning'?'chip-cleaning':'chip-run'}`}>{c.assigned}</span>
                               ) : '—'}
                             </td>
-                            <td className="text-[11px] leading-snug space-y-0.5">
+                            <td className="text-[12px] font-semibold leading-snug space-y-0.5">
                               {(c.reasons||[]).map((r,i)=>(<div key={i}>{r}</div>))}
                             </td>
                           </tr>
@@ -342,6 +357,10 @@ export default function App() {
                             <td colSpan={3} className="text-center py-6 text-[11px] text-steel-500">No conflicts match current filters.</td>
                           </tr>
                         )}
+                        {/* Spacer row to allow slight overscroll breathing room so last row isn't flush with viewport bottom */}
+                        <tr aria-hidden="true">
+                          <td colSpan={3} className="p-0 h-4"></td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -379,9 +398,9 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div>
-                  <button onClick={runWhatIfComparison} disabled={whatIfLoading} className="btn-primary">
-                    {whatIfLoading ? 'Running…' : 'Run comparison'}
+                <div className="flex justify-center py-2">
+                  <button onClick={runWhatIfComparison} disabled={whatIfLoading} className="btn-outline-primary">
+                    {whatIfLoading ? 'Running…' : 'Run Comparison'}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -398,7 +417,7 @@ export default function App() {
                   <div className="p-4 pb-2">
                     <h4 className="text-base font-semibold">Changed assignments</h4>
                   </div>
-                  <div className="overflow-auto">
+                  <div className="overflow-y-auto overflow-x-hidden">
                     <table className="simple w-full table-fixed">
                       <thead>
                         <tr>
@@ -414,7 +433,7 @@ export default function App() {
                             <td className="font-medium text-steel-800">{row.train_id}</td>
                             <td><span className={`chip ${row.baseline==='maintenance'?'chip-maintenance': row.baseline==='standby'?'chip-standby': row.baseline==='cleaning'?'chip-cleaning':'chip-run'}`}>{row.baseline}</span></td>
                             <td><span className={`chip ${row.scenario==='maintenance'?'chip-maintenance': row.scenario==='standby'?'chip-standby': row.scenario==='cleaning'?'chip-cleaning':'chip-run'}`}>{row.scenario}</span></td>
-                            <td className="text-[11px] text-steel-600">{row.baseline==='maintenance' && row.scenario!=='maintenance' ? 'Freed from maintenance' : row.baseline!==row.scenario && row.scenario==='maintenance' ? 'Moved to maintenance' : '—'}</td>
+                            <td className="text-[11px] text-steel-600 whitespace-normal break-words pr-1">{row.baseline==='maintenance' && row.scenario!=='maintenance' ? 'Freed from maintenance' : row.baseline!==row.scenario && row.scenario==='maintenance' ? 'Moved to maintenance' : '—'}</td>
                           </tr>
                         ))}
                         {whatIfChanges.length===0 && (
@@ -422,15 +441,17 @@ export default function App() {
                             <td colSpan={4} className="text-center py-6 text-[11px] text-steel-500">{whatIfBaselineSchedule.length && whatIfScenarioSchedule.length ? 'No assignment changes.' : 'Run a comparison to see changes.'}</td>
                           </tr>
                         )}
+                        {/* Spacer to avoid last row flush with container edge */}
+                        <tr aria-hidden="true">
+                          <td colSpan={4} className="p-0 h-4"></td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
               </div>
             )}
-            {activeTab === 'whatif' && (
-              <div className="text-xs text-steel-500">What‑if simulator coming soon…</div>
-            )}
+            {/* Removed obsolete placeholder text for What-if tab now that feature is implemented */}
           </div>
         </main>
       </div>

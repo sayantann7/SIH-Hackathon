@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import trainImg from '../assets/loading_train.png'
 
 export default function WelcomeSplash({
-	message = "Welcome to Kochi Metro Rail – Let's plan tomorrow's smooth ride together.",
+	message = "Welcome to Kochi Metro Rail",
 	duration = 2500
 }) {
 	const [visible, setVisible] = useState(true)

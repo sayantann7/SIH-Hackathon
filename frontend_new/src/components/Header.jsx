@@ -31,7 +31,7 @@ export default function Header({ onRun, onRefresh, running, refreshing, onScan, 
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
           <button onClick={handlePick} disabled={scanning} className="btn-green flex items-center gap-2">
-            <img src={cameraIcon} alt="Scan" className="w-4 h-4 object-contain" />
+            <img src={cameraIcon} alt="Scan" className="w-5 h-5 object-contain" />
             {scanning ? 'Scanning…' : 'Scan Photo'}
           </button>
           <input type="file" accept="image/*" ref={fileRef} className="hidden" onChange={handleFile} />

@@ -60,6 +60,13 @@ The MVP demonstrates how an AI + optimization-driven system can automate this de
 .
 ├─ backend/
 │  └─ main.py            # FastAPI + PuLP scheduler and image ingestion
+├─ frontend_new/         # React frontend (Vite + TailwindCSS)
+│  ├─ src/
+│  │  ├─ components/     # React components
+│  │  ├─ api/           # API client
+│  │  └─ App.jsx        # Main app
+│  ├─ package.json
+│  └─ vite.config.js    # Vite config with API proxy
 ├─ data/                 # CSV datasets
 │  ├─ trains.csv
 │  ├─ fitness.csv
@@ -68,11 +75,12 @@ The MVP demonstrates how an AI + optimization-driven system can automate this de
 │  ├─ mileage.csv
 │  ├─ cleaning.csv
 │  └─ stabling.csv
-├─ static/
-│  └─ index.html         # Simple UI
+├─ static/               # Legacy HTML UI (fallback)
+│  └─ index.html
 ├─ requirements.txt
 ├─ Dockerfile
-├─ .dockerignore
+├─ run-dev-servers.bat   # Start both frontend & backend for development
+├─ run-full-stack.bat    # Build React app and serve via Python backend
 └─ README.md
 ```
 
@@ -80,15 +88,17 @@ The MVP demonstrates how an AI + optimization-driven system can automate this de
 
 ## 📊 Features in MVP
 
+✅ **Modern React Frontend** with responsive design and interactive components  
+✅ **Real-time API Integration** between React and Python backend  
 ✅ Ingests synthetic datasets for 1000 trains  
 ✅ Applies constraints (fitness expiry, job-card, branding, cleaning capacity)  
 ✅ Balances mileage across trains  
 ✅ Generates daily schedule (Run / Standby / Cleaning / Maintenance)  
 ✅ Provides reasoning per train (why it was assigned)  
 ✅ Offers **what-if simulation** (simulate a train failure, adjust cleaning slots)  
-✅ Frontend UI to view schedules and rerun optimizer  
+✅ **Photo scanning** using Groq Vision LLM to update constraints  
 
-➡️ Ingestion: Photo/scan ingestion using Groq Vision LLM to update constraints (branding/fitness/cleaning/jobcard). Set `GROQ_API_KEY` in a `.env` file.
+➡️ **New**: Modern React frontend with better UX, component-based architecture, and seamless API integration.
 
 ---
 
@@ -113,7 +123,75 @@ The MVP demonstrates how an AI + optimization-driven system can automate this de
 
 ---
 
-## � Run Locally (No Docker)
+## 🚀 Run Locally (Development Mode)
+
+**Option 1: Integrated Development (Recommended)**
+
+1) Install Python dependencies:
+```cmd
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+2) Install React dependencies:
+```cmd
+cd frontend_new
+npm install
+cd ..
+```
+
+3) Set up environment variables:
+Create a `.env` file in the project root:
+```env
+GROQ_API_KEY=your_real_groq_api_key_here
+# GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+```
+
+4) Start both servers (automated):
+```cmd
+run-dev-servers.bat
+```
+This will start:
+- Python backend at http://localhost:8000
+- React frontend at http://localhost:5173
+
+**Option 2: Manual Development**
+
+Start backend:
+```cmd
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Start frontend (separate terminal):
+```cmd
+cd frontend_new
+npm run dev
+```
+
+---
+
+## 🚀 Run Production Build
+
+1) Complete steps 1-3 from development setup above
+
+2) Build and run integrated app:
+```cmd
+run-full-stack.bat
+```
+
+This builds the React app and serves it through the Python backend at http://localhost:8000
+
+**Manual Production Build:**
+```cmd
+cd frontend_new
+npm run build
+cd ..
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## 🚀 Run Locally (Legacy HTML UI)
 
 Requirements:
 - Python 3.11+
@@ -140,7 +218,7 @@ python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 4) Open the app
-- UI: http://localhost:8000
+- UI: http://localhost:8000 (will serve legacy HTML if React build not found)
 - Data: GET http://localhost:8000/api/data
 - Schedule: POST http://localhost:8000/api/schedule
 - Ingest image: POST multipart to http://localhost:8000/api/ingest-image

@@ -46,3 +46,8 @@ timestamp,filename,size_bytes,model,entries_json,updates_json,raw_excerpt
   {""train_id"": ""T16"", ""status"": ""maintenance"", ""notes"": ""fitness very low""},
   {""train_id"": ""T37"", ""status"": ""standby"", ""notes"": ""Has branding priority""}
 ]}"
+2025-09-28T17:45:24Z,whatsapp-screenshot-demo.jpg,161486,meta-llama/llama-4-scout-17b-16e-instruct,"[{""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""40 days cleaning due""}, {""train_id"": ""T16"", ""status"": ""maintenance"", ""notes"": ""fitness very low""}, {""train_id"": ""T37"", ""status"": ""standby"", ""notes"": ""Has branding priority""}]","[{""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T2"", ""action"": ""cleaning_due""}, {""train_id"": ""T16"", ""action"": ""jobcard_open=1""}, {""train_id"": ""T37"", ""action"": ""fitness_valid=1,score=0.8""}, {""train_id"": ""T37"", ""action"": ""branding.priority=1""}]","{""entries"": [
+  {""train_id"": ""T2"", ""status"": ""cleaning"", ""notes"": ""40 days cleaning due""},
+  {""train_id"": ""T16"", ""status"": ""maintenance"", ""notes"": ""fitness very low""},
+  {""train_id"": ""T37"", ""status"": ""standby"", ""notes"": ""Has branding priority""}
+]}"

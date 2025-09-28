@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import os
 import json
@@ -21,8 +22,39 @@ DATA_DIR = BASE_DIR / "data"
 
 app = FastAPI(title="KMRL Scheduler MVP")
 
+# Add CORS middleware to allow React frontend to communicate with backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:4173"],  # Common React dev server ports
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # serve static files at '/static' (Starlette requires leading slash)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+
+# Serve React frontend in production (if built)
+REACT_DIST_DIR = BASE_DIR / "frontend_new" / "dist"
+if REACT_DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=REACT_DIST_DIR / "assets"), name="react-assets")
+    
+    @app.get("/", response_class=HTMLResponse)
+    def root():
+        return FileResponse(str(REACT_DIST_DIR / "index.html"))
+    
+    # Catch-all route for React Router (SPA)
+    @app.get("/{full_path:path}", response_class=HTMLResponse)
+    def react_app(full_path: str):
+        # Don't serve index.html for API routes
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        return FileResponse(str(REACT_DIST_DIR / "index.html"))
+else:
+    # Fallback to old static HTML if React app is not built
+    @app.get("/", response_class=HTMLResponse)
+    def root():
+        return FileResponse(str(BASE_DIR / "static" / "index.html"))
 
 def load_csv(name):
     p = DATA_DIR / name
@@ -322,10 +354,6 @@ async def ingest_image(file: UploadFile = File(...)):
         "updates": applied.get("updates", []),
         "raw": result.get("raw")
     })
-
-@app.get("/", response_class=HTMLResponse)
-def root():
-    return FileResponse(str(BASE_DIR / "static" / "index.html"))
 
 @app.get("/api/data")
 def api_data():

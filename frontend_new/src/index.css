@@ -12,7 +12,7 @@
     --color-focus: #0083ab;
   }
   body {
-    font-family: theme("fontFamily.sans");
+    font-family: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
     background: var(--color-bg);
   }
 }

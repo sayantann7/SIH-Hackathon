@@ -22,7 +22,7 @@ export default function Header({ onRun, onRefresh, running, refreshing, onScan, 
         <div className="flex items-center gap-3">
           <img src={kmrlLogo} alt="KMRL Logo" className="h-8 w-auto object-contain -ml-1 mr-2" />
           <h1 className="text-[17px] font-semibold tracking-wide text-steel-800 whitespace-nowrap">Kochi Metro Rail Limited</h1>
-          <span className="ml-1 px-2 py-0.5 rounded-md bg-aqua-100 text-aqua-700 text-[10px] font-semibold">AI-ASSIST</span>
+          {/* <span className="ml-1 px-2 py-0.5 rounded-md bg-aqua-100 text-aqua-700 text-[10px] font-semibold">AI-ASSIST</span> */}
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-4">
